@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- FloorsCreateIP
+     https://stroytekproekt.ru/
+     © Stroytekproekt, 2023
+	 
+	 The manifest file. -->
+<RevitAddIns>
+  <AddIn Type="Application">
+  	<AddInId>59235e3c-8d05-4b37-9ab6-eb1663ab0f57</AddInId>
+    <Name>FloorsCreateIP</Name>
+    <Assembly>FloorsCreateIP.dll</Assembly>
+    <FullClassName>STP.FloorsCreateIP.ExternalApplication</FullClassName>
+    <VendorId>ru.stroytekproekt</VendorId>
+    <VendorDescription>Stroytekproekt, https://stroytekproekt.ru/</VendorDescription>
+  </AddIn>
+</RevitAddIns>
