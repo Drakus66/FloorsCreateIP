@@ -80,6 +80,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BorderCurveData.cs" />
     <Compile Include="LvlSelectForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -101,6 +102,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="BorderCurveData.resx">
+      <DependentUpon>BorderCurveData.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BorderCurveData.ru.resx">
+      <DependentUpon>BorderCurveData.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="LvlSelectForm.resx">
       <DependentUpon>LvlSelectForm.cs</DependentUpon>
     </EmbeddedResource>

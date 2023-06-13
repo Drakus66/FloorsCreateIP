@@ -26,7 +26,7 @@ using WPF = System.Windows;
 
 #endregion
 
-namespace STP.FloorsCreateIP
+namespace FloorsCreateIP
 {
     /// <summary>
     /// Revit external command.
@@ -34,6 +34,15 @@ namespace STP.FloorsCreateIP
 	[Transaction(TransactionMode.Manual)]
     public sealed partial class CreateFloors : IExternalCommand
     {
+        class NewFloorData
+        {
+            public List<CurveLoop> floorCurveLoops;
+            public Level level;
+            public string roomNumber;
+        }
+        
+        
+        
         /// <summary>
         /// This method implements the external command within 
         /// Revit.
@@ -46,18 +55,18 @@ namespace STP.FloorsCreateIP
 
             // Тип пола по умолчанию
             string floortypename = "Пол_не_назначено";
-            FloorType flotype = null;
+            FloorType floorType = null;
 
             FilteredElementCollector collector = new FilteredElementCollector(doc);
             ElementCategoryFilter catfilter = new ElementCategoryFilter(BuiltInCategory.OST_Floors);
-            IList<Element> fTypes = collector.WherePasses(catfilter).WhereElementIsElementType().ToElements();
+            List<Element> fTypes = collector.WherePasses(catfilter).WhereElementIsElementType().ToElements().ToList();
 
             foreach (Element ft in fTypes)
             {
-                if ((ft as FloorType) != null && ft.Name == floortypename) flotype = ft as FloorType;
+                if ((ft as FloorType) != null && ft.Name == floortypename) floorType = ft as FloorType;
             }
 
-            if (flotype == null)
+            if (floorType == null)
             {
                 using (var TR = new Transaction(commandData.Application.ActiveUIDocument.Document, "Настройка типа"))
                 {
@@ -70,7 +79,7 @@ namespace STP.FloorsCreateIP
                             deffltype = ft as FloorType;
                         }
                     }
-                    flotype = deffltype.Duplicate(floortypename) as FloorType;
+                    floorType = deffltype.Duplicate(floortypename) as FloorType;
                     Material finm = null;
                     try
                     {
@@ -85,8 +94,8 @@ namespace STP.FloorsCreateIP
                     finm.CutForegroundPatternColor = new Autodesk.Revit.DB.Color(0, 128, 0);
                     CompoundStructure cs = CompoundStructure.CreateSingleLayerCompoundStructure(MaterialFunctionAssignment.Substrate, 2 / 304.8, finm.Id);
                     cs.EndCap = EndCapCondition.NoEndCap;
-                    flotype.SetCompoundStructure(cs);
-                    flotype.get_Parameter(BuiltInParameter.ALL_MODEL_MODEL).Set("Отделка пола");
+                    floorType.SetCompoundStructure(cs);
+                    floorType.get_Parameter(BuiltInParameter.ALL_MODEL_MODEL).Set("Отделка пола");
                     TR.Commit();
                 }
             }
@@ -104,9 +113,149 @@ namespace STP.FloorsCreateIP
             //show selct level window
             if (rooms.Count == 0)
             {
+                FilteredElementCollector roomsCollector = new FilteredElementCollector(doc);
+                ElementCategoryFilter roomCatfilter = new ElementCategoryFilter(BuiltInCategory.OST_Rooms);
+                List<Element> docRooms = roomsCollector.WherePasses(roomCatfilter).WhereElementIsNotElementType().ToElements().ToList();
 
+
+
+                FilteredElementCollector lvlsCollector = new FilteredElementCollector(doc);
+                ElementCategoryFilter lvlCatfilter = new ElementCategoryFilter(BuiltInCategory.OST_Levels);
+                List<Level> docLevels = lvlsCollector.WherePasses(lvlCatfilter)
+                    .WhereElementIsNotElementType()
+                    .ToElements()
+                    .Where(l => l is Level)
+                    .Select(l => l as Level).ToList();
+
+                LvlSelectForm selectForm = new LvlSelectForm(docLevels.Select(l => l.Name).ToList());
+
+                selectForm.ShowDialog();
+
+                if (!selectForm.okStart) return Result.Cancelled;
+
+                docLevels = docLevels.Where(l => selectForm.SelectedLevels.Contains(l.Name)).ToList();
+
+                foreach (Level selectedLvl in docLevels)
+                {
+                    FilteredElementCollector lvlRooms = new FilteredElementCollector(doc, docRooms.Select(r => r.Id).ToList());
+                    ElementLevelFilter lvlFilter = new ElementLevelFilter(selectedLvl.Id);
+
+                    rooms = rooms.Concat(lvlRooms.WherePasses(lvlFilter).Where(e => (e as Room).Area > 0).Select(e => e as Room).ToList()).ToList();
+                }
             }
 
+            if (rooms.Count == 0)
+            {
+                TaskDialog.Show("Построение полов", "Не выбрано ни одного помещения");
+                return Result.Failed;
+            }
+
+            FilteredElementCollector doorsCollector = new FilteredElementCollector(doc);
+            ElementCategoryFilter doorsCatfilter = new ElementCategoryFilter(BuiltInCategory.OST_Doors);
+            List<ElementId> docDoors = doorsCollector.WherePasses(doorsCatfilter).WhereElementIsNotElementType().ToElementIds().ToList();
+
+            
+            List<NewFloorData> newFloors = new List<NewFloorData>();
+            
+            foreach (Room selectedRoom in rooms)
+            {
+                //Получение границ не через геометрию
+                bool boundsGet = false;
+
+                SpatialElementBoundaryOptions segOpt = new SpatialElementBoundaryOptions();
+                segOpt.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish;
+                segOpt.StoreFreeBoundaryFaces = true;
+                IList<IList<BoundarySegment>> roomSegments = selectedRoom.GetBoundarySegments(segOpt);
+
+                roomSegments = roomSegments.OrderByDescending(rs => rs.Sum(c => c.GetCurve().Length)).ToList();
+
+                //get room near doors
+                BoundingBoxXYZ roomBB = selectedRoom.get_BoundingBox(null);
+                Outline roomOutline = new Outline(roomBB.Min.Subtract(new XYZ(1, 1, 0)), roomBB.Max.Add(new XYZ(1, 1, 0)));
+                BoundingBoxIntersectsFilter roomBBFilter = new BoundingBoxIntersectsFilter(roomOutline);
+
+                FilteredElementCollector roomNearDoorsCollector = new FilteredElementCollector(doc, docDoors);
+                List<Element> nearDoors = roomNearDoorsCollector.WherePasses(roomBBFilter).ToElements().ToList();   
+
+
+                double perimetr = 0;
+                if (roomSegments.Count > 0)
+                {
+                    List<BoundarySegment> OuterBund = roomSegments.First().ToList();
+                    perimetr = OuterBund.Sum(b => b.GetCurve().Length);
+                }
+
+                NewFloorData nFloor = new NewFloorData()
+                {
+                    roomNumber = selectedRoom.Number,
+                    level = selectedRoom.Level,
+                    floorCurveLoops = new List<CurveLoop>()
+                };
+                
+
+
+                foreach (List<BoundarySegment> boundCountur in roomSegments)
+                {
+                    List<Curve> curveCountur = new List<Curve>();
+                    CurveLoop testCurveLoop = new CurveLoop();
+                    List<BorderCurveData> counturData = new List<BorderCurveData>();
+
+                    foreach (BoundarySegment b in boundCountur)
+                    {
+                        testCurveLoop.Append(b.GetCurve());
+                        curveCountur.Add(b.GetCurve());
+                        BorderCurveData bCurve = new BorderCurveData(b, doc, nearDoors);
+                        counturData.Add(bCurve);
+                    }
+
+                    bool isCounterClock = testCurveLoop.IsCounterclockwise(XYZ.BasisZ);
+                    bool IsOpen = testCurveLoop.IsOpen();
+                    bool hasPlane = testCurveLoop.HasPlane();
+
+
+
+
+                    nFloor.floorCurveLoops.Add(testCurveLoop);
+                }
+
+                newFloors.Add(nFloor);
+            }
+
+
+            using (var TR = new Transaction(commandData.Application.ActiveUIDocument.Document, "Построение полов"))
+            {
+                TR.Start();
+
+                foreach(NewFloorData nFloor in newFloors)
+                {
+                   
+                    CurveArray curveArray = new CurveArray();
+                    foreach(Curve c in nFloor.floorCurveLoops.First()) curveArray.Append(c);
+                    Floor newFloor = doc.Create.NewFloor(curveArray, floorType, nFloor.level, false, XYZ.BasisZ);
+
+
+                    //Отверстия пола
+                    //if (room.GetBoundarySegments(new SpatialElementBoundaryOptions()).Count > 1 && newFloor != null)
+                    //{
+                    //    for (int i = 1; i < room.GetBoundarySegments(new SpatialElementBoundaryOptions()).Count; i++)
+                    //    {
+                    //        FloorOpening fo = new FloorOpening();
+                    //        fo.OpeningCurves = new CurveArray();
+                    //        fo.destFloor = newFloor;
+                    //        CurveArray OpeningCurves = new CurveArray();
+                    //        foreach (BoundarySegment cc in room.GetBoundarySegments(new SpatialElementBoundaryOptions())[i])
+                    //        {
+                    //            fo.OpeningCurves.Append(cc.GetCurve());
+                    //        }
+                    //        floOpenings.Add(fo);
+                    //    }
+                    //}
+
+                }
+
+
+                TR.Commit();
+            }
 
 
 

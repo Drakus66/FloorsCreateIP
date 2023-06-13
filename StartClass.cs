@@ -26,7 +26,7 @@ using WPF = System.Windows;
 
 #endregion
 
-namespace STP.FloorsCreateIP
+namespace FloorsCreateIP
 {
     public sealed partial class StartClass : IExternalApplication
     {
