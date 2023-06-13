@@ -151,7 +151,6 @@ namespace FloorsCreateIP
             FilteredElementCollector doorsCollector = new FilteredElementCollector(doc);
             ElementCategoryFilter doorsCatfilter = new ElementCategoryFilter(BuiltInCategory.OST_Doors);
             List<ElementId> docDoors = doorsCollector.WherePasses(doorsCatfilter).WhereElementIsNotElementType().ToElementIds().ToList();
-
             
             List<NewFloorData> newFloors = new List<NewFloorData>();
             
@@ -200,7 +199,7 @@ namespace FloorsCreateIP
                     {
                         testCurveLoop.Append(b.GetCurve());
                         curveCountur.Add(b.GetCurve());
-                        BorderCurveData bCurve = new BorderCurveData(b, doc, nearDoors);
+                        BorderCurveData bCurve = new BorderCurveData(b, selectedRoom, doc, nearDoors);
                         counturData.Add(bCurve);
                     }
 
