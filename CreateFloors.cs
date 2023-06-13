@@ -189,8 +189,6 @@ namespace FloorsCreateIP
                     level = selectedRoom.Level,
                     floorCurveLoops = new List<List<BorderCurveData>>()
                 };
-                
-
 
                 foreach (List<BoundarySegment> boundCountur in roomSegments)
                 {
