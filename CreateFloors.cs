@@ -36,12 +36,10 @@ namespace FloorsCreateIP
     {
         class NewFloorData
         {
-            public List<CurveLoop> floorCurveLoops;
+            public List<List<BorderCurveData>> floorCurveLoops;
             public Level level;
             public string roomNumber;
         }
-        
-        
         
         /// <summary>
         /// This method implements the external command within 
@@ -189,7 +187,7 @@ namespace FloorsCreateIP
                 {
                     roomNumber = selectedRoom.Number,
                     level = selectedRoom.Level,
-                    floorCurveLoops = new List<CurveLoop>()
+                    floorCurveLoops = new List<List<BorderCurveData>>()
                 };
                 
 
@@ -212,15 +210,13 @@ namespace FloorsCreateIP
                     bool IsOpen = testCurveLoop.IsOpen();
                     bool hasPlane = testCurveLoop.HasPlane();
 
-
-
-
-                    nFloor.floorCurveLoops.Add(testCurveLoop);
+                    nFloor.floorCurveLoops.Add(counturData);
                 }
 
                 newFloors.Add(nFloor);
             }
 
+            List<FloorOpening> floOpenings = new List<FloorOpening>();
 
             using (var TR = new Transaction(commandData.Application.ActiveUIDocument.Document, "Построение полов"))
             {
@@ -229,30 +225,37 @@ namespace FloorsCreateIP
                 foreach(NewFloorData nFloor in newFloors)
                 {
                    
-                    CurveArray curveArray = new CurveArray();
-                    foreach(Curve c in nFloor.floorCurveLoops.First()) curveArray.Append(c);
-                    Floor newFloor = doc.Create.NewFloor(curveArray, floorType, nFloor.level, false, XYZ.BasisZ);
+                    CurveArray outerCurveArray = new CurveArray();
+                    foreach (BorderCurveData bcData in nFloor.floorCurveLoops.First())
+                    {
+                        foreach (Curve c in bcData.curves) outerCurveArray.Append(c);
+                    }
+                    Floor newFloor = doc.Create.NewFloor(outerCurveArray, floorType, nFloor.level, false, XYZ.BasisZ);
 
-
-                    //Отверстия пола
-                    //if (room.GetBoundarySegments(new SpatialElementBoundaryOptions()).Count > 1 && newFloor != null)
-                    //{
-                    //    for (int i = 1; i < room.GetBoundarySegments(new SpatialElementBoundaryOptions()).Count; i++)
-                    //    {
-                    //        FloorOpening fo = new FloorOpening();
-                    //        fo.OpeningCurves = new CurveArray();
-                    //        fo.destFloor = newFloor;
-                    //        CurveArray OpeningCurves = new CurveArray();
-                    //        foreach (BoundarySegment cc in room.GetBoundarySegments(new SpatialElementBoundaryOptions())[i])
-                    //        {
-                    //            fo.OpeningCurves.Append(cc.GetCurve());
-                    //        }
-                    //        floOpenings.Add(fo);
-                    //    }
-                    //}
-
+                    if (nFloor.floorCurveLoops.Count > 1)
+                    {
+                        //Отверстия пола
+                        for (int i = 1; i < nFloor.floorCurveLoops.Count; i++)
+                        {
+                            FloorOpening fo = new FloorOpening();
+                            fo.OpeningCurves = new CurveArray();
+                            fo.destFloor = newFloor;
+                            CurveArray OpeningCurves = new CurveArray();
+                            foreach (BorderCurveData bcData in nFloor.floorCurveLoops[i])
+                            {
+                                foreach (Curve c in bcData.curves) fo.OpeningCurves.Append(c);
+                            }
+                            floOpenings.Add(fo);
+                        }
+                    }
                 }
 
+                doc.Regenerate();
+
+                foreach (FloorOpening fo in floOpenings)
+                {
+                    doc.Create.NewOpening(fo.destFloor, fo.OpeningCurves, true);
+                }
 
                 TR.Commit();
             }

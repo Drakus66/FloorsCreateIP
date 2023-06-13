@@ -29,7 +29,7 @@ namespace FloorsCreateIP
 {
     public class BorderCurveData
     {
-        public Curve curve;
+        public List<Curve> curves;
 
         //data for doors
         public Wall hostWall;
@@ -37,11 +37,14 @@ namespace FloorsCreateIP
 
         public BorderCurveData (BoundarySegment segment, Document doc, List<Element> roomDoors)
         {
-            curve = segment.GetCurve();
+            curves = new List<Curve>();
+            curves.Add(segment.GetCurve());
             if (segment.LinkElementId != new ElementId(-1)) return;
 
             Element hostElem = doc.GetElement(segment.ElementId);
             if (!(hostElem is Wall)) return;
+
+            doors = new List<Element>();
 
             hostWall = (Wall)hostElem;
 
@@ -51,5 +54,11 @@ namespace FloorsCreateIP
                 if ((el as FamilyInstance).Host.Id.IntegerValue == hostWall.Id.IntegerValue) doors.Add(el);
             }   
         }
+    }
+
+    class FloorOpening
+    {
+        public Floor destFloor;
+        public CurveArray OpeningCurves;
     }
 }

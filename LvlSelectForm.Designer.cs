@@ -37,6 +37,7 @@
             // 
             // lbLevelNames
             // 
+            this.lbLevelNames.CheckOnClick = true;
             this.lbLevelNames.FormattingEnabled = true;
             this.lbLevelNames.Location = new System.Drawing.Point(12, 12);
             this.lbLevelNames.Name = "lbLevelNames";
