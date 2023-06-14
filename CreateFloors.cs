@@ -157,8 +157,6 @@ namespace FloorsCreateIP
             foreach (Room selectedRoom in rooms)
             {
                 //Получение границ не через геометрию
-                bool boundsGet = false;
-
                 SpatialElementBoundaryOptions segOpt = new SpatialElementBoundaryOptions();
                 segOpt.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish;
                 segOpt.StoreFreeBoundaryFaces = true;
@@ -259,8 +257,6 @@ namespace FloorsCreateIP
 
                 TR.Commit();
             }
-
-
 
             Result result = Result.Succeeded;
             return result;
