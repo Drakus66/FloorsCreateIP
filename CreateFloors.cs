@@ -172,7 +172,7 @@ namespace FloorsCreateIP
                 BoundingBoxIntersectsFilter roomBBFilter = new BoundingBoxIntersectsFilter(roomOutline);
 
                 FilteredElementCollector roomNearDoorsCollector = new FilteredElementCollector(doc, docDoors);
-                List<Element> nearDoors = roomNearDoorsCollector.WherePasses(roomBBFilter).ToElements().ToList();   
+                List<Element> nearDoors = roomNearDoorsCollector.WherePasses(roomBBFilter).ToElements().ToList();
 
 
                 double perimetr = 0;
@@ -228,6 +228,9 @@ namespace FloorsCreateIP
                         foreach (Curve c in bcData.curves) outerCurveArray.Append(c);
                     }
                     Floor newFloor = doc.Create.NewFloor(outerCurveArray, floorType, nFloor.level, false, XYZ.BasisZ);
+
+                    Parameter roomNumParam = newFloor.LookupParameter("АР_Пом. Номер");
+                    if (roomNumParam != null) roomNumParam.Set(nFloor.roomNumber);
 
                     if (nFloor.floorCurveLoops.Count > 1)
                     {
