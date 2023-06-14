@@ -76,7 +76,6 @@ namespace FloorsCreateIP
         static public bool Domain()
         {
             if (File.Exists("\\\\pamir.local\\fs\\Инвестпроект\\Revit server\\revitkey.txt")) return true;
-            //if (File.Exists("\\\\hyperv\\Revit2019\\АРХИВ\\11.txt")) return true;
             else return false;
         }
 
