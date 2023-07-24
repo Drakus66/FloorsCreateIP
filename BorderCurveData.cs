@@ -105,8 +105,22 @@ namespace FloorsCreateIP
                     Line l1 = Line.CreateUnbound(p1, door.FacingOrientation.Negate());
                     Line l2 = Line.CreateUnbound(p2, door.FacingOrientation.Negate());
 
-                    Curve zeroZBorder = borderCurve.CreateOffset(borderZ, XYZ.BasisZ.Negate());
+                    Curve zeroZBorder = null;
+                    XYZ zeroZP1 = new XYZ(borderCurve.GetEndPoint(0).X, borderCurve.GetEndPoint(0).Y, 0);
+                    XYZ zeroZP2 = new XYZ(borderCurve.GetEndPoint(1).X, borderCurve.GetEndPoint(1).Y, 0);
 
+                    if (borderCurve is Arc)
+                    {
+                        XYZ zeroZArcP = borderCurve.Evaluate(0.5, true);
+                        zeroZArcP = new XYZ(zeroZArcP.X, zeroZArcP.Y, 0);
+                        zeroZBorder = Arc.Create(zeroZP1, zeroZP2, zeroZArcP);
+                    }
+                    else
+                    {
+                        zeroZBorder = Line.CreateBound(zeroZP1, zeroZP2);
+                    }
+
+                        
                     IntersectionResultArray intersectDataP1 = null;
                     SetComparisonResult resultP1 = zeroZBorder.Intersect(l1, out intersectDataP1);
 
