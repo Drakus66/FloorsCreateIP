@@ -157,8 +157,6 @@ namespace FloorsCreateIP
             foreach (Room selectedRoom in rooms)
             {
                 //Получение границ не через геометрию
-                bool boundsGet = false;
-
                 SpatialElementBoundaryOptions segOpt = new SpatialElementBoundaryOptions();
                 segOpt.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish;
                 segOpt.StoreFreeBoundaryFaces = true;
@@ -172,7 +170,7 @@ namespace FloorsCreateIP
                 BoundingBoxIntersectsFilter roomBBFilter = new BoundingBoxIntersectsFilter(roomOutline);
 
                 FilteredElementCollector roomNearDoorsCollector = new FilteredElementCollector(doc, docDoors);
-                List<Element> nearDoors = roomNearDoorsCollector.WherePasses(roomBBFilter).ToElements().ToList();   
+                List<Element> nearDoors = roomNearDoorsCollector.WherePasses(roomBBFilter).ToElements().ToList();
 
 
                 double perimetr = 0;
@@ -229,6 +227,9 @@ namespace FloorsCreateIP
                     }
                     Floor newFloor = doc.Create.NewFloor(outerCurveArray, floorType, nFloor.level, false, XYZ.BasisZ);
 
+                    Parameter roomNumParam = newFloor.LookupParameter("АР_Пом. Номер");
+                    if (roomNumParam != null) roomNumParam.Set(nFloor.roomNumber);
+
                     if (nFloor.floorCurveLoops.Count > 1)
                     {
                         //Отверстия пола
@@ -256,8 +257,6 @@ namespace FloorsCreateIP
 
                 TR.Commit();
             }
-
-
 
             Result result = Result.Succeeded;
             return result;

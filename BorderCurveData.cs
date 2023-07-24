@@ -59,18 +59,18 @@ namespace FloorsCreateIP
             if (doors.Count > 0) 
             {
                 //sort along curve
-                Curve borderCurve = curves.First();
-                doors = doors.OrderBy(fi => (fi.Location as LocationPoint).Point.DistanceTo(borderCurve.GetEndPoint(0))).ToList();
+                doors = doors.OrderBy(fi => (fi.Location as LocationPoint).Point.DistanceTo(curves.First().GetEndPoint(0))).ToList();
 
-                double borderZ = borderCurve.GetEndPoint(0).Z;
+                double borderZ = curves.First().GetEndPoint(0).Z;
 
 
                 foreach (Element el in doors)
                 {
+                    Curve borderCurve = curves.Last();
                     FamilyInstance door = (FamilyInstance)el;
 
                     //get door orient
-                    Room fromRoom = door.FromRoom;
+                    Room fromRoom = null;
                     if (fromRoom == null)
                     {
                         XYZ testPoint = (door.Location as LocationPoint).Point;
@@ -115,10 +115,48 @@ namespace FloorsCreateIP
 
                     if (resultP1 == SetComparisonResult.Overlap && resultP2 == SetComparisonResult.Overlap)
                     {
+                        //create new points
+                        XYZ newPoint1 = intersectDataP1.get_Item(0).XYZPoint;
+                        newPoint1 = new XYZ(newPoint1.X, newPoint1.Y, borderZ);
+                        XYZ newPoint2 = newPoint1.Add(door.FacingOrientation.Multiply(hostWall.Width));
 
+                        XYZ newPoint4 = intersectDataP2.get_Item(0).XYZPoint;
+                        newPoint4 = new XYZ(newPoint4.X, newPoint4.Y, borderZ);
+                        XYZ newPoint3 = newPoint4.Add(door.FacingOrientation.Multiply(hostWall.Width));
+
+                        Curve newLine1 = null;
+                        Curve newLine5 = null;
+
+
+                        if (borderCurve is Arc)
+                        {
+                            Arc borderArc = (Arc)borderCurve;
+                            XYZ pointOnArc1 = borderArc.ComputeDerivatives(0.01, true).Origin;
+                            XYZ pointOnArc2 = borderArc.ComputeDerivatives(0.99, true).Origin;
+
+                            newLine1 = Arc.Create(borderArc.GetEndPoint(0), newPoint1, pointOnArc1);
+                            newLine5 = Arc.Create(newPoint4, borderArc.GetEndPoint(1), pointOnArc2);
+                        }
+                        else
+                        {
+                            newLine1 = Line.CreateBound(borderCurve.GetEndPoint(0), newPoint1);
+                            newLine5 = Line.CreateBound(newPoint4, borderCurve.GetEndPoint(1));
+                        }
+
+                        Curve newLine2 = Line.CreateBound(newPoint1, newPoint2);
+                        Curve newLine3 = Line.CreateBound(newPoint2, newPoint3);
+                        Curve newLine4 = Line.CreateBound(newPoint3, newPoint4);
+
+                        int LastIndex = curves.Count - 1;
+                        curves.RemoveAt(LastIndex);
+
+                        curves.Add(newLine1);
+                        curves.Add(newLine2);
+                        curves.Add(newLine3);
+                        curves.Add(newLine4);
+                        curves.Add(newLine5);
                     }
                 }
-            
             }
         }
     }
