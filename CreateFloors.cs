@@ -199,7 +199,7 @@ namespace FloorsCreateIP
                     {
                         testCurveLoop.Append(b.GetCurve());
                         curveCountur.Add(b.GetCurve());
-                        BorderCurveData bCurve = new BorderCurveData(b, selectedRoom, doc, nearDoors);
+                        BorderCurveData bCurve = new BorderCurveData(b, selectedRoom, doc, nearDoors); //661154
                         counturData.Add(bCurve);
                     }
 

@@ -77,7 +77,22 @@ namespace FloorsCreateIP
         {
             if (File.Exists("\\\\pamir.local\\fs\\Инвестпроект\\Revit server\\revitkey.txt")) return true;
             //if (File.Exists("\\\\hyperv\\Revit2019\\АРХИВ\\11.txt")) return true;
-            else return false;
+            else
+            {
+#if DEBUG                
+                try
+                {
+                    File.OpenRead("\\\\pamir.local\\fs\\Инвестпроект\\Revit server\\revitkey.txt");
+                }
+                catch (Exception ex)
+                {
+                    TaskDialog.Show("Ошибка", ex.Message);
+                }
+#endif
+
+                return false;
+            }
+           
         }
 
 
