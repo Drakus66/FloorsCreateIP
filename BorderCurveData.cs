@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Resources;
+using System.Windows.Documents;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using WPF = System.Windows;
@@ -144,17 +145,30 @@ namespace FloorsCreateIP
 
                         if (borderCurve is Arc)
                         {
+                            
+
                             Arc borderArc = (Arc)borderCurve;
                             XYZ pointOnArc1 = borderArc.ComputeDerivatives(0.01, true).Origin;
                             XYZ pointOnArc2 = borderArc.ComputeDerivatives(0.99, true).Origin;
+                            
+                            double dist = borderCurve.GetEndPoint(0).DistanceTo(newPoint1);
+                            if (dist > doc.Application.ShortCurveTolerance) newLine1 = Arc.Create(borderArc.GetEndPoint(0), newPoint1, pointOnArc1);
+                            else newPoint1 = borderCurve.GetEndPoint(0);
 
-                            newLine1 = Arc.Create(borderArc.GetEndPoint(0), newPoint1, pointOnArc1);
-                            newLine5 = Arc.Create(newPoint4, borderArc.GetEndPoint(1), pointOnArc2);
+                            dist = borderCurve.GetEndPoint(1).DistanceTo(newPoint4);
+                            if (dist > doc.Application.ShortCurveTolerance) newLine5 = Arc.Create(newPoint4, borderArc.GetEndPoint(1), pointOnArc2);
+                            else newPoint4 = borderCurve.GetEndPoint(1);
                         }
                         else
                         {
-                            newLine1 = Line.CreateBound(borderCurve.GetEndPoint(0), newPoint1);
-                            newLine5 = Line.CreateBound(newPoint4, borderCurve.GetEndPoint(1));
+                            double dist = borderCurve.GetEndPoint(0).DistanceTo(newPoint1);
+
+                            if (dist > doc.Application.ShortCurveTolerance) newLine1 = Line.CreateBound(borderCurve.GetEndPoint(0), newPoint1);
+                            else newPoint1 = borderCurve.GetEndPoint(0);
+
+                            dist = borderCurve.GetEndPoint(1).DistanceTo(newPoint4);
+                            if (dist > doc.Application.ShortCurveTolerance) newLine5 = Line.CreateBound(newPoint4, borderCurve.GetEndPoint(1));
+                            else newPoint4 = borderCurve.GetEndPoint(1);
                         }
 
                         Curve newLine2 = Line.CreateBound(newPoint1, newPoint2);
@@ -164,11 +178,11 @@ namespace FloorsCreateIP
                         int LastIndex = curves.Count - 1;
                         curves.RemoveAt(LastIndex);
 
-                        curves.Add(newLine1);
+                        if (newLine1 != null) curves.Add(newLine1);
                         curves.Add(newLine2);
                         curves.Add(newLine3);
                         curves.Add(newLine4);
-                        curves.Add(newLine5);
+                        if (newLine5 != null) curves.Add(newLine5);
                     }
                 }
             }
