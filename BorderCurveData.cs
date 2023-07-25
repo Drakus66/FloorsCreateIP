@@ -1,10 +1,3 @@
-/* BorderCurveData.cs
- * https://stroytekproekt.ru/
- * © Stroytekproekt, 2023
- *
- * This updater is used to create an updater capable of reacting
- * to changes in the Revit model.
- */
 #region Namespaces
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;

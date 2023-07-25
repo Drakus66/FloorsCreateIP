@@ -1,11 +1,3 @@
-/* FloorsCreateIP
- * StartClass.cs
- * https://stroytekproekt.ru/
- * © Stroytekproekt, 2023
- *
- * The external application. This is the entry point of the
- * 'FloorsCreateIP' (Revit add-in).
- */
 #region Namespaces
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;

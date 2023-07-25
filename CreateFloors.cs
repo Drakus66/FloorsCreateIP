@@ -1,10 +1,3 @@
-/* FloorsCreateIP
- * ExternalCommand.cs
- * https://stroytekproekt.ru/
- * © Stroytekproekt, 2023
- *
- * The external command.
- */
 #region Namespaces
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
